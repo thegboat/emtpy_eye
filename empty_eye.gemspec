@@ -4,12 +4,12 @@ require "empty_eye/version"
 
 Gem::Specification.new do |s|
   s.name        = "empty_eye"
-  s.version     = EmptyEye::VERSION
+  s.version     = EmptyEye::VERSION::STRING
   s.authors     = ["thegboat"]
   s.email       = ["gradygriffin@gmail.com"]
   s.homepage    = ""
-  s.summary     = %q{Rails MTI gem}
-  s.description = %q{Rails MTI gem powered by database views}
+  s.summary     = %q{Active Record MTI gem}
+  s.description = %q{Active Record MTI gem powered by database views}
 
   s.rubyforge_project = "empty_eye"
 
@@ -19,11 +19,13 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-    s.add_runtime_dependency('activerecord', '>= 2.3')
+    s.add_runtime_dependency('activerecord', '>= 2.3.0')
+    s.add_runtime_dependency('arel', '>= 3.0.0')
     s.add_development_dependency("rspec")
     s.add_development_dependency("mysql2")
   else
-    s.add_dependency('activerecord', '>= 2.3')
+    s.add_dependency('activerecord', '>= 2.3.0')
+    s.add_dependency('arel', '>= 3.0.0')
     s.add_development_dependency("rspec")
     s.add_development_dependency("mysql2")
   end
