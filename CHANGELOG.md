@@ -1,11 +1,18 @@
-# 0.1.0 / 2012-03-07 / Grady Griffin
+# 0.2.1 / 2012-03-09 / Grady Griffin
+
+* added some reasonable defaults for shard associations
+* already had CRU added D for CRUD
+* updated logic to support polymorphic associations
+* added crud tests
+
+# 0.2.0 / 2012-03-09 / Grady Griffin
 
 * revamped entire library to use associations as table shards
 * general cleanup
 * added more options for associations
 
 
-# 0.1.0 / 2012-03-07 / Grady Griffin
+# 0.1.0 / 2012-03-08 / Grady Griffin
 
 * can make a simple MTI class
 * modified schema dumper to omit views

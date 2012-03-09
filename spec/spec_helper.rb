@@ -12,49 +12,54 @@ ActiveRecord::Base.establish_connection(
 :database => "empty_eye_test"
 )
 
-ActiveRecord::Migration.create_table :people_core, :force => true do |t|
+ActiveRecord::Migration.create_table :restaurants_core, :force => true do |t|
+  t.boolean :kids_area
+  t.boolean :wifi
+  t.integer :food_genre
+  t.datetime :created_at
+  t.datetime :updated_at
+  t.datetime :deleted_at
+end
+
+ActiveRecord::Migration.create_table :bars_core, :force => true do |t|
+  t.string :music_genre
+  t.string :best_nights
+  t.string :dress_code
+  t.datetime :created_at
+  t.datetime :updated_at
+  t.datetime :deleted_at
+end
+
+ActiveRecord::Migration.create_table :businesses, :force => true do |t|
+  t.integer :biz_id
+  t.string :biz_type
   t.string :name
-  t.integer :age
-  t.integer :cm_tall
-  t.datetime :created_at
-  t.datetime :updated_at
-  t.datetime :deleted_at
+  t.string :address
+  t.string :phone
 end
 
-ActiveRecord::Migration.create_table :poll_responses, :force => true do |t|
-  t.integer :person_id
-  t.integer :poll_id
-  t.integer :answer_id
-  t.integer :attribute_name
-  t.integer :attribute_value
-  t.datetime :created_at
-  t.datetime :updated_at
-  t.datetime :deleted_at
+#this class is only to make testing easier
+class BarCore < ActiveRecord::Base
+  self.table_name = 'bars_core'
 end
 
-ActiveRecord::Migration.create_table :accounts, :force => true do |t|
-  t.string :type
-  t.integer :person_id
-  t.string :affiliation
-  t.string :identification_key
-  t.string :username
+#this class is only to make testing easier
+class RestaurantCore < ActiveRecord::Base
+  self.table_name = 'restaurants_core'
 end
 
-class Account < ActiveRecord::Base
-  belongs_to :person
+class Business < ActiveRecord::Base
+  belongs_to  :biz, :polymorphic => true
 end
 
-class FinanceAccount < Account; end
-class SocialAccount < Account; end
-
-class PollResponse < ActiveRecord::Base
-  belongs_to :person
+class Restaurant < ActiveRecord::Base
+  mti_class do |t|
+    has_one :business, :as => :biz
+  end
 end
 
-class Person < ActiveRecord::Base
-  mti_class(:people_core) do |t|
-    has_one :social_account
-    has_one :finance_account
-    has_one :poll_response, :except => [:id]
+class Bar < ActiveRecord::Base
+  mti_class do |t|
+    has_one :business, :as => :biz
   end
 end

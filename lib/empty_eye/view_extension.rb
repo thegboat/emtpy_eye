@@ -37,15 +37,25 @@ module EmptyEye
       association.name
     end
     
+    def alias_name
+      name.to_s.pluralize
+    end
+    
     def arel_table
       t = Arel::Table.new(table)
-      t.table_alias = name if name != table
+      t.table_alias = alias_name if alias_name != table
       t
     end
 
     def foreign_key
       association.foreign_key 
     end
+    
+    def polymorphic_type
+      return unless association.options[:as]
+      "#{association.options[:as]}_type"
+    end
+    
     #user declared exceptions ... exclude these attributes calls from parent
     def exceptions
       @exceptions ||= association.options[:except].to_a.collect(&:to_s)
@@ -58,11 +68,7 @@ module EmptyEye
 
     #exclude for both sql and attribute calls
     def exclude_always
-      if primary
-        []
-      else
-        ['id','created_at','updated_at','deleted_at', 'type', foreign_key]
-      end 
+      ['id','created_at','updated_at','deleted_at', 'type', foreign_key, polymorphic_type]
     end
 
     #we want to omit these columns
