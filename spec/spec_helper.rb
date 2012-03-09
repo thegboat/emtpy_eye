@@ -51,9 +51,10 @@ class PollResponse < ActiveRecord::Base
   belongs_to :person
 end
 
-class Person < EmptyEye::Base
-  extend_table(:people_core) do |t|
-    t.with_table :accounts
-    t.with_table :poll_responses
+class Person < ActiveRecord::Base
+  mti_class(:people_core) do |t|
+    has_one :social_account
+    has_one :finance_account
+    has_one :poll_response
   end
 end

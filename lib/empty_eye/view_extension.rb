@@ -1,38 +1,59 @@
 module EmptyEye
   class ViewExtension
-    
-    attr_accessor :primary, :shard
 
-    def initialize(name, options)
-      @table = name
-      @foreign_key = options[:foreign_key].to_s
-      @primary_key = options[:primary_key].to_s
-      @exceptions = options[:except].to_a.collect(&:to_s)
+    def initialize(association)
+      @association = association
+    end
+
+    def self.connection
+      ActiveRecord::Base.connection
+    end
+    
+    def association
+      @association
+    end
+    
+    def parent
+      association.active_record
+    end
+    
+    def shard
+      association.klass
     end
     
     def shard_suffix
-      "#{table.to_s.classify}Shard"
+      "#{name.classify}Shard"
     end
     
-    def shard_association_name
-      table.singularize
+    def primary
+      false
     end
     
     def table
-      @table
+      association.table_name
+    end
+    
+    def name
+      association.name
+    end
+    
+    def arel_table
+      t = Arel::Table.new(table)
+      t.table_alias = name if name != table
+      t
     end
 
     def foreign_key
-      primary ? nil : @foreign_key 
+      association.foreign_key 
     end
-    
-    def key
-      primary ? (@primary_key || "id") : nil
-    end
-
     #user declared exceptions ... exclude these attributes calls from parent
     def exceptions
-      @exceptions
+      @exceptions ||= association.options[:except].to_a.collect(&:to_s)
+    end
+    
+    def restrictions
+      @restrictions ||= association.options[:only].to_a.collect(&:to_s)
+      @restrictions.empty? ? columns : @restrictions
     end
 
     #exclude for both sql and attribute calls
@@ -46,22 +67,16 @@ module EmptyEye
 
     #we want to omit these columns
     def exclude
-      exceptions | exclude_always
+      @exclude ||= exceptions | exclude_always
     end
 
     def columns
-      @columns ||= connection.columns(table).collect(&:name)
+      @columns ||= self.class.connection.columns(table).collect(&:name)
     end
 
     #the table columns that will be extended in sql
     def columns_with_exceptions
-      columns - exclude_always
-    end
-    
-    private
-    
-    def connection
-      ActiveRecord::Base.connection
+      restrictions - exclude_always
     end
   end
 end

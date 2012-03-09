@@ -1,59 +1,66 @@
 module EmptyEye
-  class Base < ActiveRecord::Base
+  module Base
     
-    self.abstract_class = true
-    
-    def save(*args)
-      super unless valid?
-      primary_record = if new_record?
-        table_extended_with.primary.shard.new
-      else
-        table_extended_with.primary.shard.find_by_id(id)
-      end
-      table_extended_with.each do |ext|
-        next if ext.primary
-        assoc = primary_record.send(ext.table) || primary_record.send("build_#{ext.table}")
-        primary_record.send("#{ext.table}=", assoc)
-      end
-      primary_record.attributes = attributes
-      rtn = primary_record.save
-      self.id = primary_record.id if new_record?
-      reload
-      rtn
+    def self.included(base)
+      base.extend ClassMethods
     end
     
-    def primary_shard
-      self.class.primary_shard
-    end
+    module ClassMethods
     
-    def table_extended_with
-      self.class.extended_with
-    end
-    
-    class << self
       def mti_class?
         extended_with.any?
       end
     
-      def extend_table(primary_table = nil)
+      def mti_class(primary_table = nil)
         self.primary_key = "id"
         raise(EmptyEye::AlreadyExtended, "extend table method already invoked") if mti_class?
-        primary_table = table_name if primary_table.nil? and descends_from_active_record?
-        self.table_name = compute_view_name 
-        extended_with.with_table(primary_table)
-        yield extended_with if block_given?
-        create_view
+        set_mti_primary_table(primary_table)
+        self.table_name = compute_table_name 
+        extended_with.primary_table(primary_table)
+        before_yield = reflect_on_multiple_associations(:has_one, :belongs_to)
+        yield nil if block_given?
+        @mti_associations = reflect_on_multiple_associations(:has_one, :belongs_to) - before_yield
+        extend_mti_class
         true
+      end
+      
+      def extend_mti_class
+        mti_associations.each do |assoc|
+          extended_with.association(assoc)
+        end
+        create_view
+      end
+      
+      def mti_associations
+        @mti_associations
       end
 
       def extended_with
         @extended_with ||= superclass_extensions || ViewExtensionCollection.new(self)
       end
-    
-      private
-    
-      def compute_view_name
-        to_s.underscore.pluralize
+      
+      def set_mti_primary_table(primary_table_name)
+        @mti_primary_table = if primary_table_name.nil?
+          descends_from_active_record? ? "#{compute_table_name}_core" : superclass.table_name
+        elsif ordinary_table_exists?
+          raise(EmptyEye::ViewNameError, "a table named '#{primary_table_name}' already exists")
+        else
+          primary_table_name
+        end
+      end
+      
+      def mti_primary_table
+        @mti_primary_table
+      end
+      
+      def reflect_on_multiple_associations(*assoc_types)
+        assoc_types.collect do |assoc_type| 
+          reflect_on_all_associations
+        end.flatten.uniq
+      end
+
+      def ordinary_table_exists?
+        connection.tables_without_views.include?(compute_table_name)
       end
     
       def create_view
@@ -64,6 +71,20 @@ module EmptyEye
       def superclass_extensions
         superclass.extended_with.dup unless descends_from_active_record?
       end
+    end
+    
+    private
+    
+    def primary_shard
+      table_extended_with.primary.shard
+    end
+    
+    def table_extended_with
+      self.class.extended_with
+    end
+    
+    def mti_class?
+      self.class.mti_class?
     end
     
   end

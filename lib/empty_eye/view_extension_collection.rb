@@ -18,36 +18,28 @@ module EmptyEye
       @parent
     end
     
-    def add(table_name, options = {})
-      new_extension = ViewExtension.new(table_name, options)
-      array.reject! {|extension| new_extension.table == extension.table}
-      push(new_extension)
+    def association(assoc)
+      new_extension = ViewExtension.new(assoc)
+      array.reject! {|extension| new_extension.name == extension.name}
+      array.push(new_extension)
       new_extension
     end
     
-    def push(new_extension)
-      if array.empty?
-        new_extension.primary = true
-        @primary = new_extension
-      end
-      array.push(new_extension)
-    end
-    
-    def with_table(table, options = {})
-      options.reverse_merge!(:foreign_key => default_foreign_key)
-      add(table, options)
+    def primary_table(table)
+      @primary = PrimaryViewExtension.new(table, parent)
+      array.push(primary)
     end
     
     def create_view_sql
       map_columns_and_associations
       query = primary_arel_table
       
-      column_mapping.each do |column, table|
-        query = query.project(arel_tables[table][column.to_sym])
+      column_mapping.each do |column, table_alias|
+        query = query.project(arel_tables[table_alias][column.to_sym])
       end
       
       without_primary.each do |join_ext|
-        current = arel_tables[join_ext.table]
+        current = arel_tables[join_ext.name]
         key = join_ext.foreign_key.to_sym
         query = query.join(current).on(primary_key.eq(current[key]))
       end
@@ -91,7 +83,7 @@ module EmptyEye
     end
     
     def primary_arel_table
-      arel_tables[primary.table]
+      arel_tables[primary.name]
     end
     
     def tables
@@ -103,8 +95,8 @@ module EmptyEye
     end
     
     def create_arel_tables
-      tables.inject({}) do |res,name|
-        res[name] = Arel::Table.new(name)
+      array.inject({}) do |res,ext|
+        res[ext.name] = ext.arel_table
         res
       end
     end
@@ -112,48 +104,19 @@ module EmptyEye
     def map_columns_and_associations
       column_mapping.clear
       array.each_with_index do |ext|
-        ext.shard = create_shard_class(ext)
-        make_primary_have_one(ext) unless ext.primary
+        primary.have_one(ext) unless ext.primary
         ext.columns_with_exceptions.each do |col|
           if column_mapping[col.to_sym].nil?
-            column_mapping[col.to_sym] ||= ext.table
-            delegate_to(col, ext) unless ext.primary
+            column_mapping[col.to_sym] ||= ext.name
+            primary.delegate_to(col, ext) unless ext.primary
           end
         end
       end
       column_mapping
     end
     
-    def create_shard_class(ext)
-      return if "#{parent.to_s}#{ext.shard_suffix}".safe_constantize
-      new_class = Class.new(Shard).tap do |c|
-        c.table_name = ext.table
-        unless ext.primary
-          c.belongs_to(primary.table, belongs_to_args.merge(:foreign_key => ext.foreign_key))
-        end
-      end
-      new_class.empty_eye_attributes = filtered_attributes(ext)
-      EmptyEye.const_set("#{parent.to_s}#{ext.shard_suffix}", new_class)
-    end
-    
-    def filtered_attributes(ext)
-      (ext.columns_with_exceptions - primary.columns_with_exceptions) << ext.foreign_key
-    end
-    
-    def delegate_to(col, ext)
-      primary.shard.send(:delegate, "#{col}=", {:to => ext.table})
-    end
-    
-    def belongs_to_args
-      {:class_name => "EmptyEye::#{parent.to_s}#{primary.shard_suffix}", :autosave => true}
-    end
-    
-    def make_primary_have_one(ext)
-      primary.shard.send(:has_one, ext.table, :class_name => ext.shard.to_s, :dependent => :delete, :foreign_key => ext.foreign_key)
-    end
-    
     def without_primary
-      array.select {|ext| ext.table != primary.table}
+      array.select {|ext| ext != primary}
     end
   end
 end
