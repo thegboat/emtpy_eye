@@ -3,11 +3,16 @@ module EmptyEye
 
     def initialize(table_name, parent)
       @table = table_name
-      create_shard(parent)
+      @parent = parent
+      create_shard
     end
 
     def self.connection
       ActiveRecord::Base.connection
+    end
+    
+    def parent
+      @parent
     end
     
     def primary
@@ -48,7 +53,10 @@ module EmptyEye
     def have_one(ext)
       mimic = ext.association
       return if shard.reflect_on_association(mimic.name)
-      shard.send(mimic.macro, mimic.name, mimic.options.merge(:foreign_key => ext.foreign_key))
+      options = mimic.options.dup
+      options.merge!(default_has_one_options)
+      options.merge!(:foreign_key => ext.foreign_key)
+      shard.send(mimic.macro, mimic.name, options)
     end
     
     def delegate_to(col, ext)
@@ -57,9 +65,14 @@ module EmptyEye
     
     private
     
-    def create_shard(parent)
+    def default_has_one_options
+      {:autosave => true, :validate => true, :dependent => :destroy}
+    end
+    
+    def create_shard
       new_class = Class.new(Shard)
       new_class.table_name = table
+      new_class.mti_master_class = parent
       @shard = EmptyEye.const_set("#{parent.to_s}Shard", new_class)
     end
     

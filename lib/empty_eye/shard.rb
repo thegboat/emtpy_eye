@@ -2,16 +2,20 @@ module EmptyEye
   class Shard < ActiveRecord::Base
     self.abstract_class = true
     
-    def cascade_save(master)
-      master.send(:table_extended_with).each do |ext|
+    attr_accessor :mti_instance
+    cattr_accessor :mti_master_class
+    
+    def cascade_save
+      mti_instance.send(:table_extended_with).each do |ext|
         next if ext.primary
-        assoc = send(ext.name) || send("build_#{ext.name}")
+        assoc = send(ext.name)
+        assoc ||= send("build_#{ext.name}")
         send("#{ext.name}=", assoc)
       end
-      assign_attributes(master.attributes)
+      assign_attributes(mti_instance.attributes)
       save
-      master.id = id
-      master.reload
+      mti_instance.id = id
+      mti_instance.reload
     end
   end
 end

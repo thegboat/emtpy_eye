@@ -4,8 +4,7 @@ module EmptyEye
     
     def update(attribute_names = @attributes.keys)
       return super unless mti_class?
-      primary_record = primary_shard.find_by_id(id)
-      primary_record.cascade_save(self)
+      primary_shard.cascade_save
       1
     end
 
@@ -13,11 +12,30 @@ module EmptyEye
     # and returns its id.
     def create
       return super unless mti_class?
-      primary_record = primary_shard.new
-      primary_record.cascade_save(self)
+      primary_shard.cascade_save
       ActiveRecord::IdentityMap.add(self) if ActiveRecord::IdentityMap.enabled?
       @new_record = false
       self.id
+    end
+    
+    def destroy
+      return super unless mti_class?
+      primary_shard.destroy
+      if ActiveRecord::IdentityMap.enabled? and persisted?
+        ActiveRecord::IdentityMap.remove(self)
+      end
+      @destroyed = true
+      freeze
+    end
+    
+    def delete
+      return super unless mti_class?
+      primary_shard.delete
+      if ActiveRecord::IdentityMap.enabled? and persisted?
+        ActiveRecord::IdentityMap.remove(self)
+      end
+      @destroyed = true
+      freeze
     end
   end
 end
