@@ -16,10 +16,10 @@ module EmptyEye
         raise(EmptyEye::AlreadyExtended, "extend table method already invoked") if mti_class?
         set_mti_primary_table(primary_table)
         self.table_name = compute_table_name 
-        extended_with.primary_table(primary_table)
-        before_yield = reflect_on_multiple_associations(:has_one, :belongs_to)
+        extended_with.primary_table(mti_primary_table)
+        before_yield = reflect_on_multiple_associations(:has_one)
         yield nil if block_given?
-        @mti_associations = reflect_on_multiple_associations(:has_one, :belongs_to) - before_yield
+        @mti_associations = reflect_on_multiple_associations(:has_one) - before_yield
         extend_mti_class
         true
       end
@@ -37,6 +37,10 @@ module EmptyEye
 
       def extended_with
         @extended_with ||= superclass_extensions || ViewExtensionCollection.new(self)
+      end
+
+      def primary_shard
+        extended_with.primary.shard
       end
       
       def set_mti_primary_table(primary_table_name)
@@ -76,7 +80,11 @@ module EmptyEye
     private
     
     def primary_shard
-      table_extended_with.primary.shard
+      @primary_shard ||= if new_record?
+        self.class.primary_shard.new(:mti_instance => self)
+      else
+        self.class.primary_shard.find_by_id(id)
+      end
     end
     
     def table_extended_with
