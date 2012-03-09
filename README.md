@@ -13,7 +13,7 @@ ActiveRecord based MTI gem powered by database views
 
 Create MTI classes by renaming your base table with the core suffix and wrapping your associations in a mti\_class block
 
-Test example from http://techspry.com/ruby\_and\_rails/multiple-table-inheritance-in-rails-3/ which uses mixins to accomplish MTI:
+Test example from http://techspry.com/ruby_and_rails/multiple-table-inheritance-in-rails-3/ which uses mixins to accomplish MTI:
 
       ActiveRecord::Migration.create_table :restaurants_core, :force => true do |t|
         t.boolean :kids_area
