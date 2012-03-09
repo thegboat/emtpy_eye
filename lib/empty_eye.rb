@@ -20,4 +20,6 @@ end
 ::ActiveRecord::Base.send :include, EmptyEye::Persistence
 ::ActiveRecord::SchemaDumper.send :include, EmptyEye::SchemaDumper
 ::ActiveRecord::ConnectionAdapters::AbstractAdapter.send(:include, EmptyEye::ConnectionAdapter)
+::ActiveRecord::Associations::Builder::HasOne.valid_options += [:except, :only]
+::ActiveRecord::Associations::Builder::BelongsTo.valid_options += [:except, :only]
 

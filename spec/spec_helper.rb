@@ -55,6 +55,6 @@ class Person < ActiveRecord::Base
   mti_class(:people_core) do |t|
     has_one :social_account
     has_one :finance_account
-    has_one :poll_response
+    has_one :poll_response, :except => [:id]
   end
 end
