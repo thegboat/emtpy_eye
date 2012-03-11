@@ -21,7 +21,7 @@ module EmptyEye
     
     #the table columns that will be extended in sql
     def columns
-      @columns ||= restrictions - exclude
+      restrictions - exclude
     end
 
     #never the primary

@@ -71,23 +71,20 @@ module EmptyEye
         end
       end
       
+      #we dont need to keep this data
+      free_arel_columns
+      
       #STI condition if needed
       if primary.sti_also?
         query.where(primary.type_column.eq(primary.type_value))
       end
       
-      #merge create command with select column
+      #build veiw creation statement
       "CREATE VIEW #{parent.table_name} AS\n#{query.to_sql}"
     end
     
-    def arel_columns
-      @arel_columns ||= []
-    end
-    
-    def update_mapping
-      @update_mapping ||= {}
-    end
-    
+    #takes the name of extension and a hash of intended updates from master instance
+    #returns a subset of hash with only values the extension handles
     def delegate_map(name, hash)
       keys = update_mapping[name] & hash.keys
       keys.inject({}) do |res, col|
@@ -128,6 +125,21 @@ module EmptyEye
     end
     
     private
+    
+    #all of the arel columns mapped to the right arel tables
+    def arel_columns
+      @arel_columns ||= []
+    end
+    
+    #we dont need to keep this data
+    def free_arel_columns
+      @arel_columns = nil
+    end
+    
+    #tracks the attributes with the view extension that will handle it
+    def update_mapping
+      @update_mapping ||= {}
+    end
     
     #generate a foreign_key if it is missing
     def default_foreign_key

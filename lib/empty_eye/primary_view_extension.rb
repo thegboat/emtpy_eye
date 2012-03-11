@@ -91,7 +91,7 @@ module EmptyEye
 
     #the table columns that will be extended in sql
     def columns
-      @columns ||= table_columns - exclude
+      table_columns - exclude
     end
     
     #create associations for shard class to mimic parent

@@ -8,6 +8,8 @@ ActiveRecord based MTI gem powered by database views
 * Not sure why but new mti instances have a id of zero; this has caused no problems so far however.
 * No mechanism to change mti class table name but that is minor
 * More complex testing needed to ensure reliability
+* Uses ARel so should be compatible with ARel supported database that support view; only tested with MySQL
+* SchemaDumper support for omitting views with databases other than MySQL is untested
 
 Create MTI classes by renaming your base table with the core suffix and wrapping your associations in a mti\_class block
 
@@ -58,6 +60,22 @@ Test example from http://techspry.com/ruby_and_rails/multiple-table-inheritance-
 For now the convention is to name the base tables with the suffix core as the view will use the rails table name
 
 In the background the following association options are used :autosave => true, :validate => true, :dependent => :destroy
+
+MTI associations take the only and except options to limit the inherited columns.
+
+      class SmallMechanic < ActiveRecord::Base
+        mti_class :mechanics_core do |t|
+          has_one :garage, :foreign_key => :mechanic_id, :except => 'specialty'
+        end
+      end
+
+      class TinyMechanic < ActiveRecord::Base
+        mti_class :mechanics_core do |t|
+          has_one :garage, :foreign_key => :mechanic_id, :only => 'specialty'
+        end
+      end
+
+Validations are also inherited but only for validations for attributes/columns that are inherited
 
 Changing or adding these options will have no effect but the MTI would be senseless without them
 
