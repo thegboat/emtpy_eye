@@ -79,7 +79,7 @@ module EmptyEye
         query.where(primary.type_column.eq(primary.type_value))
       end
       
-      #build veiw creation statement
+      #build view creation statement
       "CREATE VIEW #{parent.table_name} AS\n#{query.to_sql}"
     end
     
@@ -122,6 +122,11 @@ module EmptyEye
       else
         super
       end
+    end
+
+    #we dont need to keep this data
+    def free_validations
+      @validations = nil
     end
     
     private
