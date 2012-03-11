@@ -4,12 +4,9 @@ ActiveRecord based MTI gem powered by database views
 
 #Issues
 
-* Need update all working
-* Need delete all working
-* Need destroy all working
-* No way to change mti class table name
-* Know idea if validations are working correctly
-* More testing
+* No known issues major issues; has been successful within data structures of high complexity (MTI to MTI, MTI to STI to MTI relationships)
+* No mechanism to change mti class table name but that is minor
+* More complex testing needed to ensure reliability
 
 Create MTI classes by renaming your base table with the core suffix and wrapping your associations in a mti\_class block
 
@@ -63,7 +60,7 @@ In the background the following association options are used :autosave => true, 
 
 Changing or adding these options will have no effect but the MTI would be senseless without them
 
-If the class does not descend active record the correct table will be used. Inheriting from STI may work but has not bee n tested.
+If the class does not descend active record the correct table will be used.
 
 If you dont want to use the core suffix convention a table can be specified (see Bar class mti implementation)
 
