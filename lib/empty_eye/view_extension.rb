@@ -1,88 +1,113 @@
 module EmptyEye
   class ViewExtension
+    
+    #extension for parent class
+    #tracks associations for database updates managed by primary extension
+    #has many of the same interfaces as primary view extension
 
     def initialize(association)
       @association = association
     end
-
-    def self.connection
-      ActiveRecord::Base.connection
+    
+    #exclude from view generation always
+    def self.exclude_always
+      ['id','created_at','updated_at','deleted_at', 'type']
     end
     
+    #association that this extension will build upon
     def association
       @association
     end
     
-    def parent
-      association.active_record
+    #the table columns that will be extended in sql
+    def columns
+      @columns ||= restrictions - exclude
     end
-    
-    def shard
-      association.klass
-    end
-    
-    def shard_suffix
-      "#{name.classify}Shard"
-    end
-    
+
+    #never the primary
     def primary
       false
     end
     
+    #table of the shard
     def table
       association.table_name
     end
     
+    #name of the association
     def name
       association.name
     end
     
-    def alias_name
-      name.to_s.pluralize
-    end
-    
+    #used to create view
     def arel_table
-      t = Arel::Table.new(table)
-      t.table_alias = alias_name if alias_name != table
-      t
+      @arel_table ||= begin
+        t= Arel::Table.new(table)
+        t.table_alias = alias_name if alias_name != table
+        t
+      end
     end
 
+    #foreign key of the shard; used in view generation and database updates
     def foreign_key
       association.foreign_key 
     end
+
+    #the shard is simply the class of the association
+    def shard
+      association.klass
+    end
     
+    def type_column
+      arel_table[polymorphic_type.to_sym] if polymorphic_type
+    end
+    
+    def type_value
+      parent.base_class.name if polymorphic_type
+    end
+
+    #value computed to remove this from column map; no need for the view to have it
     def polymorphic_type
       return unless association.options[:as]
       "#{association.options[:as]}_type"
     end
     
-    #user declared exceptions ... exclude these attributes calls from parent
-    def exceptions
-      @exceptions ||= association.options[:except].to_a.collect(&:to_s)
+    private
+    
+    #class to whom this extension belongs
+    def parent
+      association.active_record
     end
     
-    def restrictions
-      @restrictions ||= association.options[:only].to_a.collect(&:to_s)
-      @restrictions.empty? ? columns : @restrictions
+    #class of the extension table
+    def klass
+      association.klass
     end
-
-    #exclude for both sql and attribute calls
-    def exclude_always
-      ['id','created_at','updated_at','deleted_at', 'type', foreign_key, polymorphic_type]
+    
+    #uses association name to create alias to prevent non unique aliases
+    def alias_name
+      name.to_s.pluralize
+    end
+    
+    #user declared exceptions ... exclude these columns from the parent inheritance
+    def exceptions
+      association.options[:except].to_a.collect(&:to_s)
+    end
+    
+    #user declared restrictions ... restrict parent inheritance columns to these
+    def restrictions
+      only = association.options[:only].to_a.collect(&:to_s)
+      only.empty? ? table_columns : only
     end
 
     #we want to omit these columns
     def exclude
-      @exclude ||= exceptions | exclude_always
+      [exceptions, self.class.exclude_always, foreign_key, polymorphic_type].flatten.uniq
     end
 
-    def columns
-      @columns ||= self.class.connection.columns(table).collect(&:name)
-    end
-
-    #the table columns that will be extended in sql
-    def columns_with_exceptions
-      restrictions - exclude_always
+    #all the columns of the extensions table
+    def table_columns
+      klass.column_names
     end
   end
 end

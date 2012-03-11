@@ -1,5 +1,5 @@
-module EmptyEye
-  module SchemaDumper
+module ActiveRecord
+  class SchemaDumper
     def tables(stream)
       @connection.tables_without_views.sort.each do |tbl|
         next if ['schema_migrations', ignore_tables].flatten.any? do |ignored|

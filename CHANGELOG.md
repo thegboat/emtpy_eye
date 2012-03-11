@@ -1,3 +1,11 @@
+# 0.3.0 / 2012-03-11 / Grady Griffin
+
+* inherits validations as well
+* MTI to MTI is working
+* STI to STI is working
+* MTI to STI to MTI is working
+* bulletproofed shard system by giving it its own association classes
+
 # 0.2.1 / 2012-03-09 / Grady Griffin
 
 * added some reasonable defaults for shard associations
