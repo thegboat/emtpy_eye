@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = EmptyEye::VERSION::STRING
   s.authors     = ["thegboat"]
   s.email       = ["gradygriffin@gmail.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/thegboat/emtpy_eye"
   s.summary     = %q{Active Record MTI gem}
   s.description = %q{Active Record MTI gem powered by database views}
 
