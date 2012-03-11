@@ -5,6 +5,7 @@ ActiveRecord based MTI gem powered by database views
 #Issues
 
 * No known issues major issues; has been successful within data structures of high complexity (MTI to MTI, MTI to STI to MTI relationships)
+* Not sure why but new mti instances have a id of zero; this has caused no problems so far however.
 * No mechanism to change mti class table name but that is minor
 * More complex testing needed to ensure reliability
 

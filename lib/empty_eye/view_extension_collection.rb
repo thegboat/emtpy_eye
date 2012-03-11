@@ -1,6 +1,11 @@
 module EmptyEye
   class ViewExtensionCollection
     
+    #a collection of all the view_extensions
+    #these are wranglers for the shards
+    #uses 'array' as a proxy
+    #performs array methods by passing things off in method missing
+    
     def initialize(parent)
       @parent = parent
       @array = []
@@ -66,6 +71,11 @@ module EmptyEye
         end
       end
       
+      #STI condition if needed
+      if primary.sti_also?
+        query.where(primary.type_column.eq(primary.type_value))
+      end
+      
       #merge create command with select column
       "CREATE VIEW #{parent.table_name} AS\n#{query.to_sql}"
     end
@@ -86,6 +96,9 @@ module EmptyEye
       end
     end
     
+    #in the end this will be an array of argument arrays
+    #[[:validates_presence_of, :name, {}]] 
+    #parent will call the method and associated args inheriting validations
     def validations
       @validations ||= []
     end
@@ -159,8 +172,12 @@ module EmptyEye
       end
     end
     
+    #tried a cleaner solution but it wouldnt work
+    #here i am stealing the arguments needed from the shards
+    #to call the same validation on the master class (parent)
     def add_validations(column, ext)
       return unless ext.shard._validators[column].present?
+      #primary either has no validations or they have already been inherited
       return if ext.primary
       rtn = ext.shard._validators[column].each do |validator|
         meth = case validator.class.to_s

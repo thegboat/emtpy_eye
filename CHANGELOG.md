@@ -1,3 +1,10 @@
+# 0.3.1 / 2012-03-11 / Grady Griffin
+
+* Cleaned up some sti problems
+* added more comments
+* removed some unnecessary codez
+
+
 # 0.3.0 / 2012-03-11 / Grady Griffin
 
 * inherits validations as well

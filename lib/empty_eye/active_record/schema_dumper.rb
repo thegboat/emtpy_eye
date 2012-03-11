@@ -1,5 +1,6 @@
 module ActiveRecord
   class SchemaDumper
+    #we dont want views in our schema file
     def tables(stream)
       @connection.tables_without_views.sort.each do |tbl|
         next if ['schema_migrations', ignore_tables].flatten.any? do |ignored|

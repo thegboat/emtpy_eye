@@ -58,10 +58,12 @@ module EmptyEye
       association.klass
     end
     
+    #arel column of polymorphic type field
     def type_column
       arel_table[polymorphic_type.to_sym] if polymorphic_type
     end
     
+    #value of the polymorphic column
     def type_value
       parent.base_class.name if polymorphic_type
     end

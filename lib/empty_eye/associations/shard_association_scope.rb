@@ -1,6 +1,12 @@
 module EmptyEye
   module Associations
     class ShardAssociationScope < ActiveRecord::Associations::AssociationScope
+      #special association scope for shard
+      #very verbose but will be easier to update later
+      #better than monkey patching
+      #here we are patching the need to set the polymorphic type for a association lookup
+      #the shard is the 'owner' but we want the type to be the master class
+      
       
       def add_constraints(scope)
         tables = construct_tables
