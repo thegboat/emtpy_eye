@@ -6,13 +6,17 @@ module EmptyEye
     end
     
     module ClassMethods
+      
       def delete_all(conditions = nil)
         return super unless mti_class?
         mti_clear_identity_map
         affected = 0
+        #if something goes wrong forget it all
         transaction do
           if conditions
+            #batch up ids
             ids = select("`#{table_name}`.`#{primary_key}`").where(conditions).collect(&:id)
+            #delete all the shards of the mti class matching ids
             mti_batch_perform(ids) do |ext, batch|
               if ext.polymorphic_type
                 ext.shard.delete_all(ext.foreign_key => batch, ext.polymorphic_type => ext.type_value)
@@ -21,6 +25,7 @@ module EmptyEye
               end
             end
           else
+            #way simpler if there are no conditions; kill everyone
             extended_with.each do |ext|
               affected = [affected, ext.shard.delete_all].max
             end
@@ -37,12 +42,16 @@ module EmptyEye
         affected = 0
         transaction do
           if conditions
-            ids = select("`#{table_name}`.`#{primary_key}`").where(conditions).apply_finder_options(options.slice(:limit, :order)).collect(&:id)
+            #batch up ids
+            ids = select(arel_table[primary_key.to_sym]).where(conditions).apply_finder_options(options.slice(:limit, :order)).collect(&:id)
+            #update all the shards of the mti class matching ids
             affected = mti_batch_perform(ids) do |ext, batch|
+              #delegate map ingests the update hash and regurgitates a smaller hash of the values the shard can handle
               cols = extended_with.delegate_map(ext.name, stringified_updates)
               cols.empty? ? 0 : ext.shard.update_all(cols, ext.foreign_key => batch)
             end
           else
+            #way simpler if there are no conditions; change the world!
             extended_with.each do |ext|
               cols = extended_with.delegate_map(ext.name, stringified_updates)
               affected = [(cols.empty? ? 0 : ext.shard.update_all(cols)), affected].max
@@ -58,6 +67,7 @@ module EmptyEye
         ActiveRecord::IdentityMap.repository[symbolized_base_class].clear if ActiveRecord::IdentityMap.enabled?
       end
       
+      #lets do 10000 at a time
       def mti_batch_perform(ids)
         affected = 0
         until ids.to_a.empty?

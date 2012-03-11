@@ -1,7 +1,12 @@
 module EmptyEye
   module Associations
     class ShardHasOneAssociation < ActiveRecord::Associations::HasOneAssociation
-    
+      #special association for shard
+      #very verbose but will be easier to update later
+      #better than monkey patching
+      #here we are patching the need to set the polymorphic type for a association
+      #the shard is the 'owner' but we want the type to be the master class
+      
       def association_scope
         if klass
           @association_scope ||= ShardAssociationScope.new(self).scope

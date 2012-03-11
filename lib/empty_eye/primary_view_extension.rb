@@ -15,6 +15,7 @@ module EmptyEye
       ActiveRecord::Base.connection
     end
     
+    #never include the type field as it shouldnt be needed and cant be updated anyway
     def self.exclude_always
       ['type']
     end
@@ -58,6 +59,23 @@ module EmptyEye
       "id"
     end
     
+    def sti_also?
+      !parent.descends_from_active_record?
+    end
+    
+    #arel column of type field
+    def type_column
+      if sti_also? 
+        arel_table[parent.inheritance_column.to_sym]
+      end
+    end
+    
+    #value of the polymorphic column
+    def type_value
+      parent.name if type_column
+    end
+    
+    #always null for primary
     def polymorphic_type
       nil
     end
@@ -78,6 +96,7 @@ module EmptyEye
     
     #create associations for shard class to mimic parent
     def have_one(ext)
+      #this is myself; dont associate
       return if ext.primary
       mimic = ext.association
       return if shard.reflect_on_association(mimic.name)
@@ -95,23 +114,23 @@ module EmptyEye
     
     private
     
-    def shard_inherit_from
-      parent.base_class == parent ? ActiveRecord::Base : parent.send(:superclass)
-    end
-    
     #MTI wouldnt make any sense if these were not forced in the associations
     def default_has_one_options
       {:autosave => true, :validate => true, :dependent => :destroy}
+    end
+
+    #if possible shard inherits from the superclass
+    def shard_inherit_from
+      parent.base_class == parent ? ActiveRecord::Base : parent.send(:superclass)
     end
     
     #create a class to manage the parents associations
     def create_shard
       new_class = Class.new(shard_inherit_from)
-      @shard = EmptyEye.const_set("#{parent.to_s}Shard", new_class)
-      @shard.send(:include, Shard)
-      @shard
+      new_class.send(:include, Shard)
       new_class.table_name = table
       new_class.mti_master_class = parent
+      @shard = EmptyEye.const_set("#{parent.to_s}Shard", new_class)
     end
     
   end
