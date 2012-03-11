@@ -1,3 +1,7 @@
+# 0.4.1 / 2012-03-11 / Grady Griffin
+
+* added homepage to gemspec
+
 # 0.4.0 / 2012-03-11 / Grady Griffin
 
 * added tests for validation and configurations
