@@ -68,7 +68,6 @@ module EmptyEye
       parent.base_class.name if polymorphic_type
     end
 
-    #value computed to remove this from column map; no need for the view to have it
     def polymorphic_type
       return unless association.options[:as]
       "#{association.options[:as]}_type"

@@ -1,5 +1,13 @@
 # 0.4.1 / 2012-03-11 / Grady Griffin
 
+* reorganized some methods
+* added logic to free up complex data structures once they are not needed
+* fixed some comment typos
+* added comments
+* updated reflect\_on\_multiple\_associations to work as intended
+
+# 0.4.1 / 2012-03-11 / Grady Griffin
+
 * added homepage to gemspec
 
 # 0.4.0 / 2012-03-11 / Grady Griffin
