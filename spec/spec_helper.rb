@@ -12,6 +12,10 @@ ActiveRecord::Base.establish_connection(
 :database => "empty_eye_test"
 )
 
+def exec_sql(sql)
+  ActiveRecord::Base.connection.execute sql
+end
+
 ActiveRecord::Migration.create_table :restaurants, :force => true do |t|
   t.string :type
   t.boolean :kids_area
@@ -46,21 +50,26 @@ ActiveRecord::Migration.create_table :eating_venues_core, :force => true do |t|
   t.string :longitude
 end
 
-#this class is only to make testing easier
-class BarCore < ActiveRecord::Base
-  self.table_name = 'bars_core'
+ActiveRecord::Migration.create_table :eating_venues_core, :force => true do |t|
+  t.string :api_venue_id
+  t.string :latitude
+  t.string :longitude
 end
 
-#this class is only to make testing easier
-class EatingVenueCore < ActiveRecord::Base
-  self.table_name = 'eating_venues_core'
+ActiveRecord::Migration.create_table :garages, :force => true do |t|
+  t.boolean :privately_owned
+  t.integer :max_wait_days
+  t.string :specialty
+  t.string :email
+  t.integer :mechanic_id
+end
+
+ActiveRecord::Migration.create_table :mechanics_core, :force => true do |t|
+  t.string :name
 end
 
 class Business < ActiveRecord::Base
   belongs_to  :biz, :polymorphic => true
-  
-  validates_uniqueness_of :name
-  validates_presence_of :name
 end
 
 class Restaurant < ActiveRecord::Base
@@ -77,9 +86,6 @@ class Bar < ActiveRecord::Base
   mti_class do |t|
     has_one :business, :as => :biz
   end
-  
-  validates_presence_of :music_genre
-  validates_uniqueness_of :music_genre
 end
 
 class EatingVenue < ActiveRecord::Base
@@ -87,3 +93,28 @@ class EatingVenue < ActiveRecord::Base
     has_one :mexican_restaurant
   end
 end
+
+class Garage < ActiveRecord::Base
+  belongs_to :mechanic, :foreign_key => :mechanic_id
+  
+  validates_presence_of :privately_owned
+  validates_numericality_of :max_wait_days
+  validates_length_of :email, :minimum => 7
+  validates_format_of :email, :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
+  validates_uniqueness_of :email
+  validates_inclusion_of :specialty, :in => %w{foreign domestic antique something_crazy}
+  validates_exclusion_of :specialty, :in => %{ something_crazy }
+end
+
+class Mechanic < ActiveRecord::Base
+  mti_class :mechanics_core do |t|
+    has_one :garage, :foreign_key => :mechanic_id
+  end
+  
+  validates_presence_of :name
+  validates_uniqueness_of :name
+end
+
+
+
+

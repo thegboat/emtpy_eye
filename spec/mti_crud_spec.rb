@@ -4,10 +4,8 @@ require 'bundler/setup'
 
 describe ActiveRecord::Base do
   before(:each) do
-    #these classes where added for testing convenience
-    BarCore.delete_all
-    
-    Business.delete_all
+    exec_sql "truncate bars_core"
+    exec_sql "truncate businesses"
     
     @bar = Bar.create(
       :music_genre => "Latin", :best_nights => "Tuesdays", :dress_code => "casual", # bar_core attributes
