@@ -3,7 +3,7 @@ module ActiveRecord
     
     class << self
     
-      #am i an mti class? easier than making a new class type ... i tried
+      #am i a mti class? easier than making a new class type ... i tried
       def mti_class?
         extended_with.any?
       end
@@ -11,7 +11,7 @@ module ActiveRecord
       #interface for building mti_class
       #primary table is not necessary if the table named correctly (Bar => bars_core)
       #OR if the class inherits a primary table
-      #simply wrap your greasy association in this block
+      #simply wrap your greasy associations in this block
       def mti_class(primary_table = nil)
         self.primary_key = "id"
         raise(EmptyEye::AlreadyExtended, "MTI class method already invoked") if mti_class?
@@ -36,7 +36,7 @@ module ActiveRecord
         extended_with.primary.shard
       end
       
-      #we dont need no freakin' finder
+      #we dont need no freakin' type condition
       #the view handles this
       def finder_needs_type_condition?
         !mti_class? and super
@@ -62,9 +62,9 @@ module ActiveRecord
       end
       
       #determine the primary table
-      #first detrmine if our view name exists; this will need to chage one day
+      #first determine if our view name exists; this will need to change one day
       #if they didnt specify try using the core convention else the superclass
-      #if they specified use what the set
+      #if they specified use what they set
       def set_mti_primary_table(primary_table_name)
         @mti_primary_table = if ordinary_table_exists?
           raise(EmptyEye::ViewNameError, "MTI view cannot be created because a table named '#{compute_view_name}' already exists")
@@ -83,7 +83,7 @@ module ActiveRecord
       #we could use the baked in version for now
       def reflect_on_multiple_associations(*assoc_types)
         assoc_types.collect do |assoc_type| 
-          reflect_on_all_associations
+          reflect_on_all_associations(assoc_type)
         end.flatten.uniq
       end
 
@@ -92,7 +92,7 @@ module ActiveRecord
         connection.tables_without_views.include?(compute_view_name)
       end
     
-      #drop the view; dont check if we can just rescue any errors
+      #drop the view; dont check if we can, just rescue any errors
       #create the view
       def create_view
         connection.execute("DROP VIEW #{table_name}") rescue nil
@@ -105,15 +105,17 @@ module ActiveRecord
       end
       
       #we know how to rebuild the validations from the shards
-      #lets call our inherited validation here
+      #lets call our inherited validations here
       def inherit_mti_validations
         extended_with.validations.each {|args| send(*args)}
+        #no need to keep these in memory
+        extended_with.free_validations
       end
     end
     
     private
     
-    #a pseudo association method back to instances primary shard
+    #a pseudo association method mapping us back to instances primary shard
     def mti_primary_shard
       @mti_primary_shard ||= if new_record?
         self.class.mti_primary_shard.new(:mti_instance => self)

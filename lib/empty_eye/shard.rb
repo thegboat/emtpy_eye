@@ -1,8 +1,8 @@
 module EmptyEye
   module Shard
     
-    #a module that extendd the class that serves as a pointer to the primary table
-    #when there is a superclass the will inherit from that else it will inherit from ActiveRecord
+    #module which extends the class that serves as a pointer to the primary table
+    #when there is a superclass the shard will inherit from that, else it will inherit from ActiveRecord
     #the primary shard manages all the MTI associated tables for the master class
     
     def self.included(base)
@@ -10,8 +10,11 @@ module EmptyEye
     end
     
     #the instance that owns this primary shard
+    #we usually know the master instance ahead of time
+    #so we should take care to set this manually
+    #we want to avoid the lookup
     def mti_instance
-      @mti_instance
+      @mti_instance || mti_master_class.find_by_id(id)
     end
     
     #setter used to associate the primary shard with the master instance
@@ -72,7 +75,7 @@ module EmptyEye
         reflection
       end
 
-      #finder methods should use the master classes base class not the shards
+      #finder methods should use the master class's type not the shard's
       def type_condition(table = arel_table)
         sti_column = table[inheritance_column.to_sym]
 
