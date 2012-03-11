@@ -3,7 +3,7 @@ module ActiveRecord
     class AbstractAdapter
       #we need this logic to correctly build schema file
       def tables_without_views
-        #trying to make compatible with rails 2.3.x
+        #trying to make compatible with rails 2.3.x; failing
         if respond_to?('execute_and_free')
           execute_and_free(tables_without_views_sql) do |result|
             result.collect { |field| field.first }
