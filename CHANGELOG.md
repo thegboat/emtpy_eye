@@ -1,4 +1,9 @@
-# 0.4.1 / 2012-03-11 / Grady Griffin
+# 0.4.3 / 2012-03-11 / Grady Griffin
+
+* major refactor to do less in active record base
+* add view versioning to prevent creating views when not necessary
+
+# 0.4.2 / 2012-03-11 / Grady Griffin
 
 * reorganized some methods
 * added logic to free up complex data structures once they are not needed

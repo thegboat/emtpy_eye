@@ -1,14 +1,14 @@
 module EmptyEye
-  class PrimaryViewExtension
+  class PrimaryShard
     
-    #primary extension for parent class
+    #primary shard for master_class class
     #manages associations for database updates
-    #has many of the same interfaces as view extensions
+    #has many of the same interfaces as view shards
 
-    def initialize(table_name, parent)
-      @table = table_name
-      @parent = parent
-      create_shard
+    def initialize(wrangler)
+      @table = wrangler.table_name
+      @master_class = wrangler.master_class
+      @klass = wrangler
     end
 
     def self.connection
@@ -17,12 +17,12 @@ module EmptyEye
     
     #never include the type field as it shouldnt be needed and cant be updated anyway
     def self.exclude_always
-      ['type']
+      ['type', 'mti_schema_version']
     end
     
-    #class to which this extension belongs
-    def parent
-      @parent
+    #class to which this shard belongs
+    def master_class
+      @master_class
     end
     
     #to let the outside word know it is primary
@@ -30,9 +30,9 @@ module EmptyEye
       true
     end
     
-    #class that will mimic the associations of the parent for updating db
-    def shard
-      @shard
+    #class that will mimic the associations of the master_class for updating db
+    def klass
+      @klass
     end
     
     # the tablename
@@ -50,7 +50,7 @@ module EmptyEye
       @arel_table ||= Arel::Table.new(table)
     end
     
-    #this may change but for now the key is the primary id of the parent and shard
+    #this may change but for now the key is the primary id of the master_class and shard
     def key
       arel_table[:id]
     end
@@ -60,19 +60,19 @@ module EmptyEye
     end
     
     def sti_also?
-      !parent.descends_from_active_record?
+      !master_class.descends_from_active_record?
     end
     
     #arel column of type field
     def type_column
       if sti_also? 
-        arel_table[parent.inheritance_column.to_sym]
+        arel_table[master_class.inheritance_column.to_sym]
       end
     end
     
     #value of the polymorphic column
     def type_value
-      parent.name if type_column
+      master_class.name if type_column
     end
     
     #always null for primary
@@ -82,7 +82,8 @@ module EmptyEye
 
     #table columns
     def table_columns
-      self.class.connection.columns(table).collect(&:name)
+      klass.column_names
+      #self.class.connection.columns(table).collect(&:name)
     end
     
     def exclude
@@ -94,22 +95,22 @@ module EmptyEye
       table_columns - exclude
     end
     
-    #create associations for shard class to mimic parent
-    def have_one(ext)
+    #create associations for shard class to mimic master_class
+    def has_another(shard)
       #this is myself; dont associate
-      return if ext.primary
-      mimic = ext.association
-      return if shard.reflect_on_association(mimic.name)
+      return if shard.primary
+      mimic = shard.association
+      return if klass.reflect_on_association(mimic.name)
       options = mimic.options.dup
       options.merge!(default_has_one_options)
-      options.merge!(:foreign_key => ext.foreign_key)
-      shard.send(mimic.macro, mimic.name, options)
+      options.merge!(:foreign_key => shard.foreign_key)
+      klass.send(mimic.macro, mimic.name, options)
     end
     
     #delegate setters to appropriate associations
-    def delegate_to(col, ext)
-      return if ext.primary
-      shard.send(:delegate, "#{col}=", {:to => ext.name})
+    def delegate_to(col, shard)
+      return if shard.primary
+      klass.send(:delegate, "#{col}=", {:to => shard.name})
     end
     
     private
@@ -117,20 +118,6 @@ module EmptyEye
     #MTI wouldnt make any sense if these were not forced in the associations
     def default_has_one_options
       {:autosave => true, :validate => true, :dependent => :destroy}
-    end
-
-    #if possible shard inherits from the superclass
-    def shard_inherit_from
-      parent.base_class == parent ? ActiveRecord::Base : parent.send(:superclass)
-    end
-    
-    #create a class to manage the parents associations
-    def create_shard
-      new_class = Class.new(shard_inherit_from)
-      new_class.send(:include, Shard)
-      new_class.table_name = table
-      new_class.mti_master_class = parent
-      @shard = EmptyEye.const_set("#{parent.to_s}Shard", new_class)
     end
     
   end
