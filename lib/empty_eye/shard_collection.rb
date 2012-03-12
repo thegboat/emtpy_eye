@@ -1,7 +1,7 @@
 module EmptyEye
   class ShardCollection
     
-    #a collection of all the view_extensions
+    #a collection of all the view_shards
     #these are wranglers for the shards
     #uses 'array' as a proxy
     #performs array methods by passing things off in method missing
@@ -22,7 +22,7 @@ module EmptyEye
       array.inspect
     end
     
-    #the class to which the instance belongs
+    #the class to which the shards belongs
     def master_class
       @master_class
     end
@@ -32,7 +32,7 @@ module EmptyEye
       self
     end
     
-    #add extensions based on association from master_class
+    #add shard based on association from master_class
     def create_with(assoc)
       new_shard = Shard.new(assoc)
       reject! {|shard| shard.name == new_shard.name}
@@ -44,8 +44,8 @@ module EmptyEye
       @schema_version
     end
     
-    #takes the name of extension and a hash of intended updates from master instance
-    #returns a subset of hash with only values the extension handles
+    #takes the name of shard and a hash of intended updates from master instance
+    #returns a subset of hash with only values the shard handles
     def delegate_map(name, hash)
       keys = update_mapping[name] & hash.keys
       keys.inject({}) do |res, col|
@@ -53,22 +53,19 @@ module EmptyEye
         res
       end
     end
-    
-    #in the end this will be an array of argument arrays
-    #[[:validates_presence_of, :name, {}]] 
-    #master_class will call the method and associated args inheriting validations
-    def validations
-      @validations ||= []
-    end
 
-    #the primary extension
+    #the primary shard
     def primary
       @primary
     end
     
     #array of shard classes
-    def klassed
+    def klasses
       map(&:klass)
+    end
+    
+    def names
+      map(&:name)
     end
     
     #this object responds to array methods
@@ -83,11 +80,6 @@ module EmptyEye
       else
         super
       end
-    end
-
-    #we dont need to keep this data
-    def free_validations
-      @validations = nil
     end
     
     def view_sql
@@ -151,7 +143,7 @@ module EmptyEye
       @arel_columns = nil
     end
     
-    #tracks the attributes with the view extension that will handle it
+    #tracks the attributes with the shard that will handle it
     def update_mapping
       @update_mapping ||= {}
     end
@@ -172,7 +164,7 @@ module EmptyEye
       map(&:table)
     end
     
-    #map the columns to the extension that will handle it
+    #map the columns to the shard that will handle it
     def map_attribute_management
       #clear out what we know
       arel_columns.clear
@@ -180,51 +172,19 @@ module EmptyEye
       tracker = {}
       each do |shard|
         #mimic the master_class's associations through primary shard
-        primary.have_one(shard)
+        primary.has_another(shard)
         shard.columns.each do |col|
           column = col.to_sym
           #skip if we already have this column
           next if tracker[column]
           #set to true so we wont do again
           tracker[column] = true
-          #add the column based on the extension's arel_table
+          #add the column based on the shard's arel_table
           arel_columns << shard.arel_table[column]
           #later we need to know how to update thing correctly
           update_mapping[shard.name] = update_mapping[shard.name].to_a << col
-          #delegate the setter for column to shard of extension through primary shard
+          #delegate the setter for column to klass of shard through primary shard
           primary.delegate_to(column, shard) unless shard.primary
-          #mti class must inherit validations
-          add_validations(column, shard) 
-        end
-      end
-    end
-    
-    #tried a cleaner solution but it wouldnt work
-    #here i am stealing the arguments needed from the shards
-    #to call the same validation on the master class (master_class)
-    def add_validations(column, shard)
-      return unless shard.klass._validators[column].present?
-      #primary either has no validations or they have already been inherited
-      return if shard.primary
-      rtn = shard.klass._validators[column].each do |validator|
-        meth = case validator.class.to_s
-        when /presence/i then :validates_presence_of
-        when /acceptance/i then :validates_acceptance_of
-        when /numericality/i then :validates_numericality_of
-        when /length/i then :validates_length_of
-        when /inclusion/i then :validates_inclusion_of
-        when /format/i then :validates_format_of
-        when /exclusion/i then :validates_exclusion_of
-        when /confirmation/i then :validates_confirmation_of
-        when /uniqueness/i then :validates_uniqueness_of
-        else nil
-        end
-        if meth
-          args = []
-          args << meth
-          args << column
-          args << validator.options
-          validations << args
         end
       end
     end

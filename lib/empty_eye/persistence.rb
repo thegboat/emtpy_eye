@@ -39,7 +39,7 @@ module EmptyEye
     #come back and cleanup
     def delete
       return super unless mti_class?
-      shard_wrangler.class.delete_all(:id => id)
+      shard_wrangler.class.cascade_delete_all(:id => id)
       if ActiveRecord::IdentityMap.enabled? and persisted?
         ActiveRecord::IdentityMap.remove(self)
       end

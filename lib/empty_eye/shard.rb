@@ -1,9 +1,9 @@
 module EmptyEye
   class Shard
     
-    #extension for master_class class
-    #tracks associations for database updates managed by primary extension
-    #has many of the same interfaces as primary view extension
+    #shard for master_class class
+    #tracks associations for database updates managed by primary shard
+    #has many of the same interfaces as primary view shard
 
     def initialize(association)
       @association = association
@@ -14,7 +14,7 @@ module EmptyEye
       ['id','created_at','updated_at','deleted_at', 'type', 'mti_schema_version']
     end
     
-    #association that this extension will build upon
+    #association that this shard will build upon
     def association
       @association
     end
@@ -74,7 +74,7 @@ module EmptyEye
     
     private
     
-    #class to whom this extension belongs
+    #class to whom this shard belongs
     def master_class
       association.active_record
     end
@@ -100,7 +100,7 @@ module EmptyEye
       [exceptions, self.class.exclude_always, foreign_key, polymorphic_type].flatten.uniq
     end
 
-    #all the columns of the extensions table
+    #all the columns of the shards table
     def table_columns
       klass.column_names
     end

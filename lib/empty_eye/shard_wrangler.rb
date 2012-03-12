@@ -8,6 +8,8 @@ module EmptyEye
       base.extend ClassMethods
     end
     
+    #this module method creates a ShardWrangler extended ActiveRecord inherited class
+    #the class will wrangle our shards 
     def self.create(master_class, t_name)
       inherit_from = if master_class.base_class == master_class
         ActiveRecord::Base
@@ -31,7 +33,7 @@ module EmptyEye
       new_class
     end
     
-    #the instance that owns this primary shard
+    #the instance that owns this wrangler
     #we usually know the master instance ahead of time
     #so we should take care to set this manually
     #we want to avoid the lookup
@@ -39,18 +41,14 @@ module EmptyEye
       @mti_instance || master_class.find_by_id(id)
     end
     
-    #setter used to associate the primary shard with the master instance
+    #setter used to associate the wrangler with the master instance
     def mti_instance=(instance)
       @mti_instance = instance
     end
     
-    #special save so that the primary shard can keep the master instances tables consistent
+    #special save so that the wrangler can keep the master's instance tables consistent
     def cascade_save
-      #make sure all the shards are there
-      cascade_build_associations 
-      #this will propagate setters to the appropriate shards
-      assign_attributes(mti_safe_attributes)
-      self.type = master_class.name if respond_to?("type=")
+      write_attributes
       #this will autosave shards
       save
       #reset the id and then reload
@@ -62,8 +60,31 @@ module EmptyEye
     def master_class
       self.class.master_class
     end
+    
+    def valid?(context = nil)
+      context ||= (new_record? ? :create : :update)
+      write_attributes
+      output = super(context)
+      errors.each do |attr, message|
+        mti_instance.errors.add(attr, message)
+      end
+      errors.empty? && output
+    end
   
     private
+    
+    def write_attributes
+      #make sure all the shards are there
+      cascade_build_associations
+      #this will propagate setters to the appropriate shards
+      assign_attributes(mti_safe_attributes)
+      self.type = master_class.name if respond_to?("type=")
+      self
+    end
+    
+    def shards
+      self.class.shards
+    end
   
     #make sure the primary shard only tries to update what he should
     def mti_safe_attributes
@@ -76,8 +97,8 @@ module EmptyEye
     #using an autobuild would be more efficient here
     #we shouldnt load associations we dont need to
     def cascade_build_associations
-      #go through each extension making sure it is exists and is loaded
-      self.class.shards.each do |shard|
+      #go through each shard making sure it is exists and is loaded
+      shards.each do |shard|
         next if shard.primary
         assoc = send(shard.name)
         assoc ||= send("build_#{shard.name}")
@@ -87,7 +108,7 @@ module EmptyEye
     
     module ClassMethods
       
-      #the shard uses special reflection; overriden here
+      #the wrangler uses special reflection; overriden here
       def create_reflection(macro, name, options, active_record)
         raise(EmptyEye::NotYetSupported, "through associations are not yet spported") if options[:through]
         klass = options[:through] ? ShardThroughReflection : ShardAssociationReflection
@@ -97,7 +118,7 @@ module EmptyEye
         reflection
       end
 
-      #finder methods should use the master class's type not the shard's
+      #finder methods should use the master class's type not the wrangler's
       def type_condition(table = arel_table)
         sti_column = table[inheritance_column.to_sym]
 
@@ -105,7 +126,7 @@ module EmptyEye
       end
       
       #overriding find_by_id
-      #this is used to retrieve the shard instance for the master instance
+      #this is used to retrieve the wrangler instance for the master instance
       #the type column is removed
       def find_by_id(val)
         query = columns_except_type
@@ -113,7 +134,7 @@ module EmptyEye
         find_by_sql(query.to_sql).first
       end
       
-      #the shard uses a special association builder
+      #the wrangler uses a special association builder
       def has_one(name, options = {})
         Associations::Builder::ShardHasOne.build(self, name, options)
       end
@@ -134,6 +155,7 @@ module EmptyEye
         super
       end
       
+      #the primary shard
       def primary_shard
         shards.primary
       end
@@ -146,9 +168,10 @@ module EmptyEye
         end
         create_view if create_view?
         master_class.reset_column_information
-        master_inherits_validations
       end
       
+      #batch deletion when there are conditions
+      #kill indiscriminately otherwise
       def cascade_delete_all(conditions)
         mti_clear_identity_map
         affected = 0
@@ -226,8 +249,8 @@ module EmptyEye
         t = Arel::Table.new(compute_view_name)
         q = t.project(t[:mti_schema_version])
         connection.select_value(q.to_sql)
-      # rescue
-      #   nil
+      rescue
+        nil
       end
 
       #determine if what we want to name our view already exists
@@ -256,14 +279,6 @@ module EmptyEye
       def create_view
         connection.execute("DROP VIEW #{compute_view_name}") rescue nil
         connection.execute(shards.view_sql)
-      end
-      
-      #we know how to rebuild the validations from the shards
-      #lets call our inherited validations here
-      def master_inherits_validations
-        shards.validations.each {|args| master_class.send(*args)}
-        #no need to keep these in memory
-        shards.free_validations
       end
       
       #build the arel query once and memoize it

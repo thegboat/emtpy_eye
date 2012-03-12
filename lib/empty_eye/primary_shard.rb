@@ -3,7 +3,7 @@ module EmptyEye
     
     #primary shard for master_class class
     #manages associations for database updates
-    #has many of the same interfaces as view extensions
+    #has many of the same interfaces as view shards
 
     def initialize(wrangler)
       @table = wrangler.table_name
@@ -20,7 +20,7 @@ module EmptyEye
       ['type', 'mti_schema_version']
     end
     
-    #class to which this extension belongs
+    #class to which this shard belongs
     def master_class
       @master_class
     end
@@ -96,7 +96,7 @@ module EmptyEye
     end
     
     #create associations for shard class to mimic master_class
-    def have_one(shard)
+    def has_another(shard)
       #this is myself; dont associate
       return if shard.primary
       mimic = shard.association

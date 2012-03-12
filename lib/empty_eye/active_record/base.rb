@@ -7,7 +7,7 @@ module ActiveRecord
       def mti_class?
         !!@shard_wrangler
       end
-    
+  
       #interface for building mti_class
       #primary table is not necessary if the table named correctly (Bar => bars_core)
       #OR if the class inherits a primary table
@@ -23,7 +23,7 @@ module ActiveRecord
         @shard_wrangler.wrangle_shards(mti_ancestors)
         true
       end
-      
+    
       #we need this when we add new associaton types to extend with
       #we could use the baked in version for now
       def reflect_on_multiple_associations(*assoc_types)
@@ -47,7 +47,7 @@ module ActiveRecord
       def shard_wrangler
         @shard_wrangler
       end
-      
+    
       def descends_from_active_record?
         if superclass.abstract_class?
           superclass.descends_from_active_record?
@@ -57,9 +57,16 @@ module ActiveRecord
           superclass == Base || !columns_hash.include?(inheritance_column)
         end
       end
-      
+    
       private
       
+    end
+    
+    def valid?(context = nil)
+      context ||= (new_record? ? :create : :update)
+      output = super(context)
+      return errors.empty? && output unless mti_class?
+      shard_wrangler.valid?(context) && errors.empty? && output
     end
     
     private
