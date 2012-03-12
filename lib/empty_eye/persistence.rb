@@ -6,7 +6,7 @@ module EmptyEye
     #else let the primary shard do the saving
     def update(attribute_names = @attributes.keys)
       return super unless mti_class?
-      mti_primary_shard.cascade_save
+      shard_wrangler.cascade_save
       1
     end
 
@@ -15,7 +15,7 @@ module EmptyEye
     #come back and cleanup
     def create
       return super unless mti_class?
-      mti_primary_shard.cascade_save
+      shard_wrangler.cascade_save
       ActiveRecord::IdentityMap.add(self) if ActiveRecord::IdentityMap.enabled?
       @new_record = false
       self.id
@@ -26,7 +26,7 @@ module EmptyEye
     #come back and cleanup
     def destroy
       return super unless mti_class?
-      mti_primary_shard.destroy
+      shard_wrangler.destroy
       if ActiveRecord::IdentityMap.enabled? and persisted?
         ActiveRecord::IdentityMap.remove(self)
       end
@@ -39,7 +39,7 @@ module EmptyEye
     #come back and cleanup
     def delete
       return super unless mti_class?
-      self.class.delete_all(:id => id)
+      shard_wrangler.class.delete_all(:id => id)
       if ActiveRecord::IdentityMap.enabled? and persisted?
         ActiveRecord::IdentityMap.remove(self)
       end

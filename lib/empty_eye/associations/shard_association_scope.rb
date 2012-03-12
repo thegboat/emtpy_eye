@@ -45,7 +45,7 @@ module EmptyEye
             scope = scope.where(table[key].eq(owner[foreign_key]))
 
             if reflection.type
-              scope = scope.where(table[reflection.type].eq(owner.mti_master_class.base_class.name))
+              scope = scope.where(table[reflection.type].eq(owner.master_class.base_class.name))
             end
 
             conditions.each do |condition|
