@@ -50,12 +50,6 @@ ActiveRecord::Migration.create_table :eating_venues_core, :force => true do |t|
   t.string :longitude
 end
 
-ActiveRecord::Migration.create_table :eating_venues_core, :force => true do |t|
-  t.string :api_venue_id
-  t.string :latitude
-  t.string :longitude
-end
-
 ActiveRecord::Migration.create_table :garages, :force => true do |t|
   t.boolean :privately_owned
   t.integer :max_wait_days
