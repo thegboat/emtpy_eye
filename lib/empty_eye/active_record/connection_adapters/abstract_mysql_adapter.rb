@@ -1,6 +1,6 @@
 module ActiveRecord
   module ConnectionAdapters
-    class AbstractMysqlAdapter
+    class AbstractMysqlAdapter < AbstractAdapter
       
       def tables_without_views(name = nil, database = nil, like = nil) #:nodoc:
         sql = "SHOW FULL TABLES WHERE table_type = 'BASE TABLE'"

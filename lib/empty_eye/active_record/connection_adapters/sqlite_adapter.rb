@@ -1,6 +1,6 @@
 module ActiveRecord
   module ConnectionAdapters
-    class SQLiteAdapter
+    class SQLiteAdapter < AbstractAdapter
 
       def tables(name = 'SCHEMA', table_name = nil) #:nodoc:
         sql = <<-SQL

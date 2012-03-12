@@ -1,6 +1,6 @@
 module ActiveRecord
   module ConnectionAdapters
-    class PostgreSQLAdapter
+    class PostgreSQLAdapter < AbstractAdapter
       
       def tables(name = nil)
         tables_without_views(name) | views(name)

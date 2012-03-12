@@ -1,6 +1,6 @@
 module ActiveRecord
   module ConnectionAdapters
-    class OracleEnhancedAdapter
+    class OracleEnhancedAdapter < AbstractAdapter
       
       def tables_without_views(name = nil) #:nodoc:
         tables = []

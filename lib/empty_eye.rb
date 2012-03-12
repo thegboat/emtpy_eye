@@ -18,7 +18,13 @@ require "empty_eye/shard_association_reflection"
 
 require "empty_eye/active_record/base"
 require "empty_eye/active_record/schema_dumper"
-require "empty_eye/active_record/connection_adapter"
+require "empty_eye/active_record/connection_adapters/abstract_mysql_adapter"
+require "empty_eye/active_record/connection_adapters/postgresql_adapter"
+require "empty_eye/active_record/connection_adapters/oci_adapter"
+require "empty_eye/active_record/connection_adapters/oracle_adapter"
+require "empty_eye/active_record/connection_adapters/oracleenhanced_adapter"
+require "empty_eye/active_record/connection_adapters/sqlserver_adapter"
+require "empty_eye/active_record/connection_adapters/sqlite_adapter"
 
 module EmptyEye
 

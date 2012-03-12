@@ -1,6 +1,6 @@
 module ActiveRecord
   module ConnectionAdapters
-    class OracleAdapter
+    class OracleAdapter < AbstractAdapter
       
       def tables(name = nil) #:nodoc:
         tables = []

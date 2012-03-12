@@ -1,6 +1,6 @@
 module ActiveRecord
   module ConnectionAdapters
-    class OciAdapter
+    class OciAdapter < AbstractAdapter
       
       def tables(name = nil) #:nodoc:
         tables_without_views(name) | views(name)
