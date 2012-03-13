@@ -80,40 +80,7 @@ For now the convention is to name the base tables with the suffix core as the vi
 
 In the background the following association options are used :autosave => true, :validate => true, :dependent => :destroy
 
-MTI associations take the only and except options to limit the inherited columns.
-
-      ActiveRecord::Migration.create_table :garages, :force => true do |t|
-        t.boolean :privately_owned
-        t.integer :max_wait_days
-        t.string :specialty
-        t.string :email
-        t.integer :mechanic_id
-      end
-
-      ActiveRecord::Migration.create_table :mechanics_core, :force => true do |t|
-        t.string :name
-      end
-
-      class Garage < ActiveRecord::Base
-        belongs_to :mechanic, :foreign_key => :mechanic_id
-
-        validates_presence_of :privately_owned
-        validates_numericality_of :max_wait_days
-        validates_length_of :email, :minimum => 7
-        validates_format_of :email, :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
-        validates_uniqueness_of :email
-        validates_inclusion_of :specialty, :in => %w{foreign domestic antique something_crazy}
-        validates_exclusion_of :specialty, :in => %{ something_crazy }
-      end
-
-      class Mechanic < ActiveRecord::Base
-        mti_class :mechanics_core do |t|
-          has_one :garage, :foreign_key => :mechanic_id
-        end
-
-        validates_presence_of :name
-        validates_uniqueness_of :name
-      end
+MTI associations take the :only and :except options to limit the inherited columns.
 
       class SmallMechanic < ActiveRecord::Base
         mti_class :mechanics_core do |t|
@@ -126,14 +93,23 @@ MTI associations take the only and except options to limit the inherited columns
           has_one :garage, :foreign_key => :mechanic_id, :only => 'specialty'
         end
       end
+      
 
-Validations are also inherited but only for validations for attributes/columns that are inherited
+Views are automatically created during class definition.  
 
-Changing or adding these options will have no effect but the MTI would be senseless without them
+They are managed through Empty Eye View Manager.
+
+The View Manager only rebuilds views when necessary and prevents another app instance from mistakenly rebuilding views during runtime.
+
+Validations are also inherited but only for validations for attributes/columns that are inherited.
+
+Only has one associations are supported and always have :autosave => true, :validate => true, :dependent => :destroy options applied.
+
+Changing or adding these options will have no effect but the MTI would be senseless without them.
 
 If the class does not descend active record the correct table will be used.
 
-If you dont want to use the core suffix convention a table can be specified (see Bar class mti implementation)
+If you dont want to use the core suffix convention a table can be specified (see Bar class mti implementation).
 
 
       1.9.3p0 :005 > Bar
@@ -205,7 +181,7 @@ Other more complex structures examples:
       
 Here Restaurant is not an mti class but instead a sti base class. The table name here is just restaurants.
 
-MexicanRestaurant inherits from Restaurant therefore no specified primary table is needed; the primary table for MexicanRestaurant is restaurants
+MexicanRestaurant inherits from Restaurant therefore no specified primary table is needed; the primary table for MexicanRestaurant is restaurants.
 
 MexicanRestaurant inherits the attributes of the Business table.
 
