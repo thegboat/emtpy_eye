@@ -32,10 +32,12 @@ Create MTI classes by renaming your base table with the core suffix and wrapping
 
 Test example from http://techspry.com/ruby_and_rails/multiple-table-inheritance-in-rails-3/ which uses mixins to accomplish MTI:
 
-      ActiveRecord::Migration.create_table :restaurants_core, :force => true do |t|
+      ActiveRecord::Migration.create_table :restaurants, :force => true do |t|
+        t.string :type
         t.boolean :kids_area
         t.boolean :wifi
-        t.integer :food_genre
+        t.integer :eating_venue_id
+        t.string :food_genre
         t.datetime :created_at
         t.datetime :updated_at
         t.datetime :deleted_at
@@ -80,6 +82,39 @@ In the background the following association options are used :autosave => true, 
 
 MTI associations take the only and except options to limit the inherited columns.
 
+      ActiveRecord::Migration.create_table :garages, :force => true do |t|
+        t.boolean :privately_owned
+        t.integer :max_wait_days
+        t.string :specialty
+        t.string :email
+        t.integer :mechanic_id
+      end
+
+      ActiveRecord::Migration.create_table :mechanics_core, :force => true do |t|
+        t.string :name
+      end
+
+      class Garage < ActiveRecord::Base
+        belongs_to :mechanic, :foreign_key => :mechanic_id
+
+        validates_presence_of :privately_owned
+        validates_numericality_of :max_wait_days
+        validates_length_of :email, :minimum => 7
+        validates_format_of :email, :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
+        validates_uniqueness_of :email
+        validates_inclusion_of :specialty, :in => %w{foreign domestic antique something_crazy}
+        validates_exclusion_of :specialty, :in => %{ something_crazy }
+      end
+
+      class Mechanic < ActiveRecord::Base
+        mti_class :mechanics_core do |t|
+          has_one :garage, :foreign_key => :mechanic_id
+        end
+
+        validates_presence_of :name
+        validates_uniqueness_of :name
+      end
+
       class SmallMechanic < ActiveRecord::Base
         mti_class :mechanics_core do |t|
           has_one :garage, :foreign_key => :mechanic_id, :except => 'specialty'
@@ -120,7 +155,67 @@ If you dont want to use the core suffix convention a table can be specified (see
       
        1.9.3p0 :013 > Bar.find_by_id(2)
         => nil
+        
+Other more complex structures examples:
+
+        ActiveRecord::Migration.create_table :restaurants, :force => true do |t|
+          t.string :type
+          t.boolean :kids_area
+          t.boolean :wifi
+          t.integer :eating_venue_id
+          t.string :food_genre
+          t.datetime :created_at
+          t.datetime :updated_at
+          t.datetime :deleted_at
+        end
+
+        ActiveRecord::Migration.create_table :eating_venues_core, :force => true do |t|
+          t.string :api_venue_id
+          t.string :latitude
+          t.string :longitude
+        end
+        
+        ActiveRecord::Migration.create_table :businesses, :force => true do |t|
+          t.integer :biz_id
+          t.string :biz_type
+          t.string :name
+          t.string :address
+          t.string :phone
+        end
+
+        class Business < ActiveRecord::Base
+          belongs_to  :biz, :polymorphic => true
+        end
+        
+        class Restaurant < ActiveRecord::Base
+          belongs_to  :foursquare_venue
+        end
+
+        class MexicanRestaurant < Restaurant
+          mti_class do |t|
+            has_one :business, :as => :biz
+          end
+        end
+
+        class EatingVenue < ActiveRecord::Base
+          mti_class do |t|
+            has_one :mexican_restaurant
+          end
+        end
       
+Here Restaurant is not an mti class but instead a sti base class. The table name here is just restaurants.
+
+MexicanRestaurant inherits from Restaurant therefore no specified primary table is needed; the primary table for MexicanRestaurant is restaurants
+
+MexicanRestaurant inherits the attributes of the Business table.
+
+EatingVenue has not specified primary table so Empty Eye uses 'eating\_venues\_core'.
+
+Eating Venue is declared as an mti class which inherits the table structure of MexicanRestaurant, an mti class, which in turn is a sti class.
+
+Empty Eye only handles multiple table inheritance and not multiple class inheritance.
+
+Classes like MexicanRestaurant will inherit methods from Restaurant but not from Business.
       
       
 
