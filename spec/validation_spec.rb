@@ -5,8 +5,8 @@ require 'bundler/setup'
 describe ActiveRecord::Base do
   
   before(:each) do
-    exec_sql "truncate mechanics_core"
-    exec_sql "truncate garages"
+    exec_sql "delete from mechanics_core"
+    exec_sql "delete from garages"
     
     @mechanic = Mechanic.new(
       :name => 'Grady',
