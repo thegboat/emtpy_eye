@@ -6,7 +6,10 @@ require "empty_eye/version"
 
 require "empty_eye/persistence"
 require "empty_eye/relation"
+require "empty_eye/base_methods"
 require "empty_eye/errors"
+
+require "empty_eye/view_manager"
 require "empty_eye/shard"
 require "empty_eye/primary_shard"
 require "empty_eye/shard_collection"
@@ -30,8 +33,6 @@ module EmptyEye
 
 end
 
-::ActiveRecord::Base.send :include, EmptyEye::Persistence
-::ActiveRecord::Base.send :include, EmptyEye::Relation
 ::ActiveRecord::Associations::Builder::HasOne.valid_options += [:except, :only]
-::ActiveRecord::Associations::Builder::BelongsTo.valid_options += [:except, :only]
+#::ActiveRecord::Associations::Builder::BelongsTo.valid_options += [:except, :only]
 

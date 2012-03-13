@@ -37,13 +37,13 @@ module EmptyEye
     #we usually know the master instance ahead of time
     #so we should take care to set this manually
     #we want to avoid the lookup
-    def mti_instance
-      @mti_instance || master_class.find_by_id(id)
+    def master_instance
+      @master_instance || master_class.find_by_id(id)
     end
     
     #setter used to associate the wrangler with the master instance
-    def mti_instance=(instance)
-      @mti_instance = instance
+    def master_instance=(instance)
+      @master_instance = instance
     end
     
     #special save so that the wrangler can keep the master's instance tables consistent
@@ -52,8 +52,8 @@ module EmptyEye
       #this will autosave shards
       save
       #reset the id and then reload
-      mti_instance.id = id
-      mti_instance.reload
+      master_instance.id = id
+      master_instance.reload
     end
     
     #reflection on master class; this should never change
@@ -66,7 +66,8 @@ module EmptyEye
       write_attributes
       output = super(context)
       errors.each do |attr, message|
-        mti_instance.errors.add(attr, message)
+        attr = attr.to_s.partition('.').last if attr.to_s =~ /\./
+        master_instance.errors.add(attr, message)
       end
       errors.empty? && output
     end
@@ -75,10 +76,11 @@ module EmptyEye
     
     def write_attributes
       #make sure all the shards are there
-      cascade_build_associations
+      cascade_build_associations if master_instance.new_record?
       #this will propagate setters to the appropriate shards
       assign_attributes(mti_safe_attributes)
       self.type = master_class.name if respond_to?("type=")
+      self.updated_at = Time.now if respond_to?("updated_at=") and not changed?
       self
     end
     
@@ -88,21 +90,17 @@ module EmptyEye
   
     #make sure the primary shard only tries to update what he should
     def mti_safe_attributes
-      mti_instance.attributes.except(
+      master_instance.attributes.except(
         *self.class.primary_shard.exclude
       )
     end
   
-    #all the instance shards should exist but lets be certain
-    #using an autobuild would be more efficient here
-    #we shouldnt load associations we dont need to
+    #all the instance shards should exist
     def cascade_build_associations
       #go through each shard making sure it is exists and is loaded
       shards.each do |shard|
         next if shard.primary
-        assoc = send(shard.name)
-        assoc ||= send("build_#{shard.name}")
-        send("#{shard.name}=", assoc)
+        send(shard.name) || send("build_#{shard.name}")
       end
     end
     
@@ -166,7 +164,7 @@ module EmptyEye
         mti_ancestors.each do |assoc|
           shards.create_with(assoc)
         end
-        create_view if create_view?
+        create_view
         master_class.reset_column_information
       end
       
@@ -239,46 +237,11 @@ module EmptyEye
       def mti_clear_identity_map
         ActiveRecord::IdentityMap.repository[symbolized_base_class].clear if ActiveRecord::IdentityMap.enabled?
       end
-      
-      #get the schema version
-      #we shouldnt recreate views that we donth have to
-      def mti_schema_version
-        check_for_name_error
-        return nil unless connection.table_exists?(compute_view_name)
-        return nil unless mti_view_versioned?
-        t = Arel::Table.new(compute_view_name)
-        q = t.project(t[:mti_schema_version])
-        connection.select_value(q.to_sql)
-      rescue
-        nil
-      end
-
-      #determine if what we want to name our view already exists
-      def check_for_name_error
-        if connection.tables_without_views.include?(compute_view_name)
-          raise(EmptyEye::ViewNameError, "MTI view cannot be created because a table named '#{compute_view_name}' already exists")
-        end
-      end
-      
-      #we need to create the sql first to determine the schema_version
-      #if the current schema version is the same as the old dont recreate the view
-      #if it is nil then recreate
-      def create_view?
-        shards.create_view_sql
-        schema_version = mti_schema_version
-        schema_version.nil? or schema_version != shards.schema_version
-      end
-      
-      #always recreate
-      def mti_view_versioned?
-        connection.columns(compute_view_name).any? {|c| c.name == 'mti_schema_version'}
-      end
     
       #drop the view; dont check if we can, just rescue any errors
       #create the view
       def create_view
-        connection.execute("DROP VIEW #{compute_view_name}") rescue nil
-        connection.execute(shards.view_sql)
+        EmptyEye::ViewManager.create_view(compute_view_name, shards.create_view_sql)
       end
       
       #build the arel query once and memoize it

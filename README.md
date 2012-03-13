@@ -2,6 +2,22 @@
 
 ActiveRecord based MTI gem powered by database views
 
+add to your Gemfile
+
+      gem 'empty_eye'
+      
+and bundle or
+
+      gem install empty_eye
+      
+when using rails run the optional migration generator and the migration
+
+this migration tracks view versions and its usage is highly recommended
+
+      rails generate empty_eye
+      =>  create  db/migrate/20120313042059_create_empty_eye_views_table.rb
+      rake db:migrate
+
 #Issues
 
 * No known issues major issues; has been successful within data structures of high complexity (MTI to MTI, MTI to STI to MTI relationships)

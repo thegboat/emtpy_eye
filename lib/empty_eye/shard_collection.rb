@@ -112,9 +112,6 @@ module EmptyEye
         end
       end
       
-      self.schema_version = Digest::MD5.hexdigest(query.to_sql)
-      query.project("'#{schema_version}' AS mti_schema_version")
-      
       #we dont need to keep this data
       free_arel_columns
       

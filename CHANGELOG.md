@@ -1,3 +1,15 @@
+# 0.4.5 / 2012-03-11 / Grady Griffin
+
+* refactored some validation logic code
+* reorganized code to clean up active record base
+* added generator to manage view versioning
+* removed old view versioning code
+* added view manager class to handle view versioning, creating  and updating
+
+# 0.4.4 / 2012-03-11 / Grady Griffin
+
+* added various connection adapters; only mysql tested
+
 # 0.4.3 / 2012-03-11 / Grady Griffin
 
 * major refactor to do less in active record base
