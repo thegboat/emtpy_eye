@@ -28,6 +28,13 @@ def exec_sql(sql)
   ActiveRecord::Base.connection.execute sql
 end
 
+begin 
+  ActiveRecord::Base.connection.views.each do |name|
+    puts name
+    EmptyEye::ViewManager.drop_view(name)
+  end
+end until ActiveRecord::Base.connection.views.empty?
+
 ActiveRecord::Migration.create_table :restaurants, :force => true do |t|
   t.string :type
   t.boolean :kids_area
