@@ -1,3 +1,8 @@
+# 0.4.8 / 2012-03-13 / Grady Griffin
+
+* readme revisions
+* fixing view manager bug
+
 # 0.4.7 / 2012-03-13 / Grady Griffin
 
 * readme revision

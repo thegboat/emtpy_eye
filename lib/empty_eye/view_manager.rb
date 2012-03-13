@@ -38,12 +38,8 @@ module EmptyEye
       self.class.connection.execute(sql)
     end
     
-    def table_exists?
-      self.class.connection.table_exists?(view_name)
-    end
-    
     def ordinary_table_exists?
-      self.class.connection.tables_without_views.include?(view_name)
+      self.class.connection.ordinary_table_exists?(view_name)
     end
     
     def compute_version
@@ -55,7 +51,7 @@ module EmptyEye
     end
     
     def view_exists?
-      table_exists? and !ordinary_table_exists?
+      self.connection.view_exists?(view_name)
     end
     
     def create_view?
