@@ -1,6 +1,5 @@
 module EmptyEye
   module Persistence
-    extend ActiveSupport::Concern
     
     #if it is not a mti_class do what you do
     #else let the primary shard do the saving
