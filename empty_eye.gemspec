@@ -23,10 +23,14 @@ Gem::Specification.new do |s|
     s.add_runtime_dependency('arel', '>= 3.0.0')
     s.add_development_dependency("rspec")
     s.add_development_dependency("mysql2")
+    s.add_development_dependency("sqlite3")
+    s.add_development_dependency("pg")
   else
     s.add_dependency('activerecord', '>= 2.3.0')
     s.add_dependency('arel', '>= 3.0.0')
     s.add_development_dependency("rspec")
     s.add_development_dependency("mysql2")
+    s.add_development_dependency("sqlite3")
+    s.add_development_dependency("pg")
   end
 end

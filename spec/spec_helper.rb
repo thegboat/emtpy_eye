@@ -7,9 +7,21 @@ require 'empty_eye'
 #   # some (optional) config here
 # end
 
+# ActiveRecord::Base.establish_connection(
+# :adapter => "mysql2",
+# :database => "empty_eye_test"
+# )
+
+# ActiveRecord::Base.establish_connection(
+# :adapter => "sqlite3",
+# :database => "db/empty_eye_test.db"
+# )
+
 ActiveRecord::Base.establish_connection(
-:adapter => "mysql2",
-:database => "empty_eye_test"
+:adapter => "postgresql",
+:database => "empty_eye_test",
+:username => 'grady',
+:password => 'letmein'
 )
 
 def exec_sql(sql)

@@ -4,8 +4,8 @@ require 'bundler/setup'
 
 describe ActiveRecord::Base do
   before(:each) do
-    exec_sql "truncate restaurants"
-    exec_sql "truncate businesses"
+    exec_sql "delete from restaurants"
+    exec_sql "delete from businesses"
     
     @restaurant = MexicanRestaurant.create(
       :kids_area => false, :wifi => true, :food_genre => "mexican", # restaurant attributes
