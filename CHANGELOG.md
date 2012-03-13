@@ -1,4 +1,8 @@
-# 0.4.6 / 2012-03-11 / Grady Griffin
+# 0.4.7 / 2012-03-13 / Grady Griffin
+
+* readme revision
+
+# 0.4.6 / 2012-03-12 / Grady Griffin
 
 * tested with sqlite
 * tested with postgres
