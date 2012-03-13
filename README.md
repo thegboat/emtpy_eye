@@ -27,7 +27,6 @@ this migration tracks view versions and its usage is highly recommended
 * No mechanism to change mti class table name but that is minor
 * More complex testing needed to ensure reliability
 * Uses ARel so should be compatible with ARel supported database that support view; there is support for Oracle and Sql Server adapters but these are not tested
-* SchemaDumper support for omitting views with databases other than MySQL is untested
 
 Create MTI classes by renaming your base table with the core suffix and wrapping your associations in a mti\_class block
 
