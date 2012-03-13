@@ -4,9 +4,9 @@ require 'bundler/setup'
 
 describe ActiveRecord::Base do
   before(:each) do
-    exec_sql "truncate eating_venues_core"
-    exec_sql "truncate restaurants"
-    exec_sql "truncate businesses"
+    exec_sql "delete from eating_venues_core"
+    exec_sql "delete from restaurants"
+    exec_sql "delete from businesses"
     
     @venue = EatingVenue.create(
       :api_venue_id => 'abcdefg', :latitude => '122.11111', :longitude => '-81,11111', # eating venue attributes

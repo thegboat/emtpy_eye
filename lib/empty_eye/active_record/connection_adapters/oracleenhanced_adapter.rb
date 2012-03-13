@@ -12,9 +12,7 @@ module ActiveRecord
       end
       
       def tables(name = nil) #:nodoc:
-        tables = tables_without_views(name)
-        views = views(name)
-        tables | views
+        tables_without_views(name) | views(name)
       end
       
       def views(name = nil) #:nodoc:

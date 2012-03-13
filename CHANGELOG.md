@@ -1,3 +1,8 @@
+# 0.4.6 / 2012-03-11 / Grady Griffin
+
+* tested with sqlite
+* tested with postgres
+
 # 0.4.5 / 2012-03-11 / Grady Griffin
 
 * refactored some validation logic code
