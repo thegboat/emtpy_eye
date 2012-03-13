@@ -16,7 +16,7 @@ module ActiveRecord
       
       def views(name = nil)
         query(<<-SQL, 'SCHEMA').map { |row| row[0] }
-          SELECT tablename
+          SELECT viewname
           FROM pg_views
           WHERE schemaname = ANY (current_schemas(false))
         SQL
